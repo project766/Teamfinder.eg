@@ -1,173 +1,139 @@
-   /************************************************
- * 1. INITIALIZE FIREBASE
- ************************************************/
-const firebaseConfig = {
-  apiKey: "AIzaSyD0efUT_IFoPQ3svHnu89j7kyWE6OYnWtE",
-  authDomain: "the-tech-world-e2b7c.firebaseapp.com",
-  projectId: "the-tech-world-e2b7c",
-  storageBucket: "the-tech-world-e2b7c.firebasestorage.app",
-  messagingSenderId: "435175920778",
-  appId: "1:435175920778:web:09c9e899d71afce34c0973"
-};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="logo.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Finder</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,800" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-firebase.initializeApp(firebaseConfig);
+<!-- AUTH VIEW -->
+<div id="auth-view" class="view-section active">
+    <div class="container" id="main-container">
+        <!-- SIGN UP -->
+        <div class="form-container sign-up-container">
+            <form id="signUpForm">
+                <h1>Create Account</h1>
+                <div class="social-container">
+                    <a href="#" onclick="loginWithGoogle()"><i class="fab fa-google"></i></a>
+                </div>
+                <span>or use your email for registration</span>
+                <input type="text" id="upName" placeholder="Name" required />
+                <input type="email" id="upEmail" placeholder="Email" required />
+                <input type="password" id="upPassword" placeholder="Password" required />
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
 
-const auth = firebase.auth();
-const db   = firebase.firestore();
+        <!-- SIGN IN -->
+        <div class="form-container sign-in-container">
+            <form id="signInForm">
+                <h1>Sign in</h1>
+                <div class="social-container">
+                    <a href="javascript:void(0)" onclick="loginWithGoogle()">
+                        <i class="fab fa-google"></i>
+                    </a>
+                </div>
+                <span>or use your account</span>
+                <input type="email" id="inEmail" placeholder="Email" required />
+                <input type="password" id="inPassword" placeholder="Password" required />
+                <a href="#" onclick="switchView('reset-view')">Forgot your password?</a>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
 
-/************************************************
- * 2. WAIT FOR PAGE LOAD
- ************************************************/
-window.addEventListener("DOMContentLoaded", () => {
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h1>Welcome Back!</h1>
+                    <p>Keep connected with us by logging in</p>
+                    <button class="ghost" id="signInToggle">Sign In</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h1>Hello, Friend!</h1>
+                    <p>Enter your details to find your team</p>
+                    <button class="ghost" id="signUpToggle">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-  // Animation toggles
-  const mainContainer = document.getElementById('main-container');
-  const signUpToggle  = document.getElementById('signUpToggle');
-  const signInToggle  = document.getElementById('signInToggle');
+<!-- RESET VIEW -->
+<div id="reset-view" class="view-section">
+    <div class="simple-card">
+        <h1>Reset Password</h1>
+        <form id="resetForm">
+            <input type="email" id="resetEmail" placeholder="Email Address" required />
+            <button type="submit">Send Reset Link</button>
+        </form>
+        <br>
+        <a href="#" onclick="switchView('auth-view')">← Back to Login</a>
+    </div>
+</div>
 
-  if (signUpToggle && signInToggle && mainContainer) {
-    signUpToggle.onclick = () =>
-      mainContainer.classList.add("right-panel-active");
+<!-- DASHBOARD VIEW -->
+<div id="dashboard-view" class="view-section">
+    <nav class="navbar">
+        <div class="logo">TECHWORLD</div>
+        <div class="menu-icon" onclick="toggleSettings()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
 
-    signInToggle.onclick = () =>
-      mainContainer.classList.remove("right-panel-active");
-  }
+    <div class="dashboard-content">
+        <div class="welcome-box">
+            <div id="profilePhotoContainer" class="profile-photo-container"></div>
+            <h1>Dashboard</h1>
+            <p>Welcome, <span id="display-name-label">User</span>!</p>
+            <p id="user-email-display" style="color:#666;font-size:14px;"></p>
+        </div>
 
-  /************************************************
-   * 6. FORM ACTIONS
-   ************************************************/
+        <!-- SETTINGS PANEL -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-header">
+                <h3>Account Settings</h3>
+                <i class="fas fa-times" onclick="toggleSettings()"></i>
+            </div>
+            <div class="settings-body">
+                <div class="setting-item">
+                    <label>Update Name</label>
+                    <input type="text" id="newNameInput" placeholder="New display name">
+                    <button onclick="updateName()">Update</button>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Profile Photo</label>
+                    <div class="photo-upload-container">
+                        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                        <button type="button" id="photoSelectBtn" class="photo-btn">
+                            <i class="fas fa-camera"></i> Select Photo
+                        </button>
+                        <div id="photoPreview" class="photo-preview"></div>
+                        <button id="uploadPhotoBtn" class="upload-btn" style="display:none;">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                    </div>
+                </div>
+                
+                <hr>
+                <div class="setting-item">
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-  // Sign In
-  const signInForm = document.getElementById('signInForm');
-  if (signInForm) {
-    signInForm.onsubmit = (e) => {
-      e.preventDefault();
-      auth.signInWithEmailAndPassword(
-        document.getElementById('inEmail').value,
-        document.getElementById('inPassword').value
-      ).catch(err => alert(err.message));
-    };
-  }
-
-  // Sign Up
-  const signUpForm = document.getElementById('signUpForm');
-  if (signUpForm) {
-    signUpForm.onsubmit = (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById('upName').value;
-
-      auth.createUserWithEmailAndPassword(
-        document.getElementById('upEmail').value,
-        document.getElementById('upPassword').value
-      )
-      .then(res =>
-        res.user.updateProfile({ displayName: name })
-          .then(() => syncUserToFirestore(res.user))
-      )
-      .catch(err => alert(err.message));
-    };
-  }
-
-  // Reset Password
-  const resetForm = document.getElementById('resetForm');
-  if (resetForm) {
-    resetForm.onsubmit = (e) => {
-      e.preventDefault();
-      auth.sendPasswordResetEmail(
-        document.getElementById('resetEmail').value
-      )
-      .then(() => {
-        alert("Check your email 📧");
-        switchView('auth-view');
-      })
-      .catch(err => alert(err.message));
-    };
-  }
-
-});
-
-/************************************************
- * 3. DATABASE SYNC (ONE FUNCTION ONLY ✅)
- ************************************************/
-function syncUserToFirestore(user) {
-  if (!user) return;
-
-  return db.collection("users").doc(user.uid).set({
-    name: user.displayName || "New User",
-    email: user.email,
-    phone: user.phoneNumber || "Not provided",
-    photo: user.photoURL || "",
-    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true })
-  .catch(err => console.error("Firestore Error:", err));
-}
-
-/************************************************
- * 4. AUTH STATE LISTENER
- ************************************************/
-auth.onAuthStateChanged(user => {
-  if (user) {
-    const nameLabel  = document.getElementById('display-name-label');
-    const emailLabel = document.getElementById('user-email-display');
-
-    if (nameLabel)  nameLabel.innerText  = user.displayName || "User";
-    if (emailLabel) emailLabel.innerText = user.email;
-
-    switchView('dashboard-view');
-    syncUserToFirestore(user);
-  } else {
-    const resetView = document.getElementById('reset-view');
-    if (!resetView || !resetView.classList.contains('active')) {
-      switchView('auth-view');
-    }
-  }
-});
-
-/************************************************
- * 5. HELPER FUNCTIONS
- ************************************************/
-function switchView(viewId) {
-  document.querySelectorAll('.view-section')
-    .forEach(v => v.classList.remove('active'));
-
-  const view = document.getElementById(viewId);
-  if (view) view.classList.add('active');
-}
-
-function toggleSettings() {
-  const panel = document.getElementById('settings-panel');
-  if (panel) panel.classList.toggle('active');
-}
-
-function updateName() {
-  const newName = document.getElementById('newNameInput').value;
-
-  if (newName && auth.currentUser) {
-    auth.currentUser.updateProfile({ displayName: newName })
-      .then(() => {
-        syncUserToFirestore(auth.currentUser);
-        document.getElementById('display-name-label').innerText = newName;
-        alert("Name Updated ✅");
-        toggleSettings();
-      });
-  }
-}
-
-function logout() {
-  auth.signOut();
-  const panel = document.getElementById('settings-panel');
-  if (panel) panel.classList.remove('active');
-}
-
-/************************************************
- * 7. GOOGLE LOGIN
- ************************************************/
-function loginWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-
-  auth.signInWithPopup(provider)
-    .then(result => syncUserToFirestore(result.user))
-    .catch(err => alert(err.message));
-}
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

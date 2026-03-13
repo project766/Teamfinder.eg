@@ -1,4 +1,4 @@
-/************************************************
+ /************************************************
  * 1. INITIALIZE FIREBASE
  ************************************************/
 const firebaseConfig = {
@@ -8,34 +8,43 @@ const firebaseConfig = {
   storageBucket: "the-tech-world-e2b7c.firebasestorage.app",
   messagingSenderId: "435175920778",
   appId: "1:435175920778:web:09c9e899d71afce34c0973"
+
+
+
+
+
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+const db   = firebase.firestore();
 
 /************************************************
  * 2. WAIT FOR PAGE LOAD
  ************************************************/
+
+
+
 window.addEventListener("DOMContentLoaded", () => {
+
   // Animation toggles
   const mainContainer = document.getElementById('main-container');
-  const signUpToggle = document.getElementById('signUpToggle');
-  const signInToggle = document.getElementById('signInToggle');
+  const signUpToggle  = document.getElementById('signUpToggle');
+  const signInToggle  = document.getElementById('signInToggle');
 
   if (signUpToggle && signInToggle && mainContainer) {
-    signUpToggle.onclick = () => mainContainer.classList.add("right-panel-active");
-    signInToggle.onclick = () => mainContainer.classList.remove("right-panel-active");
-  }
+    signUpToggle.onclick = () =>
+      mainContainer.classList.add("right-panel-active");
 
-  // Photo upload listeners
-  initPhotoUpload();
+    signInToggle.onclick = () =>
+      mainContainer.classList.remove("right-panel-active");
+  }
 
   /************************************************
    * 6. FORM ACTIONS
    ************************************************/
+
   // Sign In
   const signInForm = document.getElementById('signInForm');
   if (signInForm) {
@@ -53,13 +62,17 @@ window.addEventListener("DOMContentLoaded", () => {
   if (signUpForm) {
     signUpForm.onsubmit = (e) => {
       e.preventDefault();
+
       const name = document.getElementById('upName').value;
+
       auth.createUserWithEmailAndPassword(
         document.getElementById('upEmail').value,
         document.getElementById('upPassword').value
       )
-      .then(res => res.user.updateProfile({ displayName: name })
-        .then(() => syncUserToFirestore(res.user)))
+      .then(res =>
+        res.user.updateProfile({ displayName: name })
+          .then(() => syncUserToFirestore(res.user))
+      )
       .catch(err => alert(err.message));
     };
   }
@@ -69,7 +82,9 @@ window.addEventListener("DOMContentLoaded", () => {
   if (resetForm) {
     resetForm.onsubmit = (e) => {
       e.preventDefault();
-      auth.sendPasswordResetEmail(document.getElementById('resetEmail').value)
+      auth.sendPasswordResetEmail(
+        document.getElementById('resetEmail').value
+      )
       .then(() => {
         alert("Check your email 📧");
         switchView('auth-view');
@@ -77,140 +92,45 @@ window.addEventListener("DOMContentLoaded", () => {
       .catch(err => alert(err.message));
     };
   }
+
 });
 
 /************************************************
- * PHOTO UPLOAD SYSTEM
- ************************************************/
-function initPhotoUpload() {
-  const photoInput = document.getElementById('photoInput');
-  const photoSelectBtn = document.getElementById('photoSelectBtn');
-  const photoPreview = document.getElementById('photoPreview');
-  const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
-
-  if (!photoInput || !photoSelectBtn || !photoPreview || !uploadPhotoBtn) return;
-
-  photoSelectBtn.onclick = () => photoInput.click();
-  photoInput.onchange = handlePhotoSelect;
-  uploadPhotoBtn.onclick = handlePhotoUpload;
-}
-
-function handlePhotoSelect(e) {
-  const file = e.target.files[0];
-  const photoPreview = document.getElementById('photoPreview');
-  const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
-
-  if (file) {
-    if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      photoPreview.innerHTML = `
-        <img src="${e.target.result}" alt="Preview">
-        <br><small>${file.name} (${(file.size/1024/1024).toFixed(2)} MB)</small>
-      `;
-      uploadPhotoBtn.style.display = 'inline-block';
-      uploadPhotoBtn.disabled = false;
-    };
-    reader.readAsDataURL(file);
-    window.selectedPhotoFile = file;
-  }
-}
-
-async function handlePhotoUpload() {
-  if (!window.selectedPhotoFile || !auth.currentUser) {
-    alert('No photo selected or not logged in');
-    return;
-  }
-
-  const userId = auth.currentUser.uid;
-  const fileName = `profile_photos/${userId}_${Date.now()}_${window.selectedPhotoFile.name}`;
-  const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
-
-  uploadPhotoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-  uploadPhotoBtn.disabled = true;
-
-  try {
-    const storageRef = storage.ref(fileName);
-    const uploadTask = storageRef.put(window.selectedPhotoFile);
-
-    await new Promise((resolve, reject) => {
-      uploadTask.on('state_changed',
-        null,
-        reject,
-        async () => {
-          const downloadURL = await storageRef.getDownloadURL();
-          await auth.currentUser.updateProfile({ photoURL: downloadURL });
-          await syncUserToFirestore(auth.currentUser);
-          resolve(downloadURL);
-        }
-      );
-    });
-
-    updateProfilePhotoUI(auth.currentUser.photoURL);
-    alert('✅ Profile photo updated successfully!');
-    resetPhotoUI();
-
-  } catch (error) {
-    alert('Upload failed: ' + error.message);
-    resetPhotoUI();
-  }
-}
-
-function resetPhotoUI() {
-  const photoPreview = document.getElementById('photoPreview');
-  const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
-  const photoInput = document.getElementById('photoInput');
-  
-  photoPreview.innerHTML = '';
-  uploadPhotoBtn.style.display = 'none';
-  uploadPhotoBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Photo';
-  uploadPhotoBtn.disabled = false;
-  photoInput.value = '';
-  delete window.selectedPhotoFile;
-}
-
-function updateProfilePhotoUI(photoURL) {
-  const profileContainer = document.getElementById('profilePhotoContainer');
-  profileContainer.innerHTML = `
-    <div class="profile-photo" style="
-      width: 60px; height: 60px; border-radius: 50%; 
-      margin: 0 auto 15px; background: #ddd url('${photoURL}') center/cover;
-      border: 3px solid #4285f4; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    "></div>
-  `;
-}
-
-function loadCurrentProfilePhoto(user) {
-  const photoPreview = document.getElementById('photoPreview');
-  if (user.photoURL) {
-    photoPreview.innerHTML = `
-      <img src="${user.photoURL}" alt="Current Photo" style="max-width:100px;max-height:100px;border-radius:8px;">
-      <br><small>Current photo</small>
-    `;
-    updateProfilePhotoUI(user.photoURL);
-  }
-}
-
-/************************************************
- * 3. DATABASE SYNC
+ * 3. DATABASE SYNC (ONE FUNCTION ONLY ✅)
  ************************************************/
 function syncUserToFirestore(user) {
   if (!user) return;
+
   return db.collection("users").doc(user.uid).set({
     name: user.displayName || "New User",
     email: user.email,
     phone: user.phoneNumber || "Not provided",
     photo: user.photoURL || "",
     lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true }).catch(err => console.error("Firestore Error:", err));
+  }, { merge: true })
+  .catch(err => console.error("Firestore Error:", err));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 /************************************************
@@ -218,11 +138,14 @@ function syncUserToFirestore(user) {
  ************************************************/
 auth.onAuthStateChanged(user => {
   if (user) {
-    document.getElementById('display-name-label').innerText = user.displayName || "User";
-    document.getElementById('user-email-display').innerText = user.email;
+    const nameLabel  = document.getElementById('display-name-label');
+    const emailLabel = document.getElementById('user-email-display');
+
+    if (nameLabel)  nameLabel.innerText  = user.displayName || "User";
+    if (emailLabel) emailLabel.innerText = user.email;
+
     switchView('dashboard-view');
     syncUserToFirestore(user);
-    loadCurrentProfilePhoto(user);
   } else {
     const resetView = document.getElementById('reset-view');
     if (!resetView || !resetView.classList.contains('active')) {
@@ -235,18 +158,45 @@ auth.onAuthStateChanged(user => {
  * 5. HELPER FUNCTIONS
  ************************************************/
 function switchView(viewId) {
-  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.view-section')
+    .forEach(v => v.classList.remove('active'));
+
   const view = document.getElementById(viewId);
   if (view) view.classList.add('active');
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 function toggleSettings() {
   const panel = document.getElementById('settings-panel');
   if (panel) panel.classList.toggle('active');
+
+
+
+
+
+
+
+
+
+
+
 }
 
 function updateName() {
   const newName = document.getElementById('newNameInput').value;
+
   if (newName && auth.currentUser) {
     auth.currentUser.updateProfile({ displayName: newName })
       .then(() => {
@@ -262,6 +212,14 @@ function logout() {
   auth.signOut();
   const panel = document.getElementById('settings-panel');
   if (panel) panel.classList.remove('active');
+
+
+
+
+
+
+
+
 }
 
 /************************************************
@@ -270,7 +228,69 @@ function logout() {
 function loginWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
+
   auth.signInWithPopup(provider)
     .then(result => syncUserToFirestore(result.user))
     .catch(err => alert(err.message));
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

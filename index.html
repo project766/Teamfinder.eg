@@ -14,7 +14,6 @@
 <!-- AUTH VIEW -->
 <div id="auth-view" class="view-section active">
     <div class="container" id="main-container">
-        <!-- SIGN UP -->
         <div class="form-container sign-up-container">
             <form id="signUpForm">
                 <h1>Create Account</h1>
@@ -28,15 +27,11 @@
                 <button type="submit">Sign Up</button>
             </form>
         </div>
-
-        <!-- SIGN IN -->
         <div class="form-container sign-in-container">
             <form id="signInForm">
                 <h1>Sign in</h1>
                 <div class="social-container">
-                    <a href="javascript:void(0)" onclick="loginWithGoogle()">
-                        <i class="fab fa-google"></i>
-                    </a>
+                    <a href="javascript:void(0)" onclick="loginWithGoogle()"><i class="fab fa-google"></i></a>
                 </div>
                 <span>or use your account</span>
                 <input type="email" id="inEmail" placeholder="Email" required />
@@ -45,7 +40,6 @@
                 <button type="submit">Sign In</button>
             </form>
         </div>
-
         <div class="overlay-container">
             <div class="overlay">
                 <div class="overlay-panel overlay-left">
@@ -71,8 +65,7 @@
             <input type="email" id="resetEmail" placeholder="Email Address" required />
             <button type="submit">Send Reset Link</button>
         </form>
-        <br>
-        <a href="#" onclick="switchView('auth-view')">← Back to Login</a>
+        <br><a href="#" onclick="switchView('auth-view')">← Back to Login</a>
     </div>
 </div>
 
@@ -80,8 +73,9 @@
 <div id="dashboard-view" class="view-section">
     <nav class="navbar">
         <div class="logo">TECHWORLD</div>
-        <div class="menu-icon" onclick="toggleSettings()">
-            <i class="fas fa-bars"></i>
+        <div class="nav-buttons">
+            <i class="fas fa-users" onclick="switchView('users-view')" title="View Team"></i>
+            <i class="fas fa-bars" onclick="toggleSettings()"></i>
         </div>
     </nav>
 
@@ -93,7 +87,13 @@
             <p id="user-email-display" style="color:#666;font-size:14px;"></p>
         </div>
 
-        <!-- SETTINGS PANEL -->
+        <!-- USERS GRID -->
+        <div class="users-section">
+            <h2>📸 Team Photos <span id="usersCount">Loading...</span></h2>
+            <div id="usersGrid" class="users-grid"></div>
+        </div>
+
+        <!-- SETTINGS -->
         <div id="settings-panel" class="settings-panel">
             <div class="settings-header">
                 <h3>Account Settings</h3>
@@ -105,7 +105,6 @@
                     <input type="text" id="newNameInput" placeholder="New display name">
                     <button onclick="updateName()">Update</button>
                 </div>
-                
                 <div class="setting-item">
                     <label>Profile Photo</label>
                     <div class="photo-upload-container">
@@ -115,11 +114,10 @@
                         </button>
                         <div id="photoPreview" class="photo-preview"></div>
                         <button id="uploadPhotoBtn" class="upload-btn" style="display:none;">
-                            <i class="fas fa-upload"></i> Upload Photo
+                            <i class="fas fa-upload"></i> Save to Database
                         </button>
                     </div>
                 </div>
-                
                 <hr>
                 <div class="setting-item">
                     <button class="logout-btn" onclick="logout()">Logout</button>
@@ -129,11 +127,21 @@
     </div>
 </div>
 
+<!-- USERS VIEW -->
+<div id="users-view" class="view-section">
+    <nav class="navbar">
+        <div class="logo">👥 All Team Members</div>
+        <i class="fas fa-arrow-left" onclick="switchView('dashboard-view')"></i>
+    </nav>
+    <div class="users-section-full">
+        <div id="allUsersGrid" class="users-grid-full"></div>
+    </div>
+</div>
+
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -1,251 +1,120 @@
-const firebaseConfig = {
-
-apiKey: "YOUR_API_KEY",
-
-authDomain: "YOUR_DOMAIN",
-
-projectId: "YOUR_PROJECT_ID",
-
-storageBucket: "YOUR_BUCKET",
-
-appId: "YOUR_APP_ID"
-
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-
-const db = firebase.firestore();
-
-const storage = firebase.storage();
-
-
-
-window.addEventListener("DOMContentLoaded", () => {
-
-document.getElementById("signInForm").onsubmit = e => {
-
-e.preventDefault();
-
-auth.signInWithEmailAndPassword(
-
-document.getElementById("inEmail").value,
-
-document.getElementById("inPassword").value
-
-).catch(e => alert(e.message));
-
-};
-
-
-
-document.getElementById("signUpForm").onsubmit = e => {
-
-e.preventDefault();
-
-const name = document.getElementById("upName").value;
-
-auth.createUserWithEmailAndPassword(
-
-document.getElementById("upEmail").value,
-
-document.getElementById("upPassword").value
-
-)
-
-.then(res => {
-
-return res.user.updateProfile({
-
-displayName: name
-
-});
-
-})
-
-.then(() => syncUser(auth.currentUser))
-
-.catch(e => alert(e.message));
-
-};
-
-
-
-document.getElementById("resetForm").onsubmit = e => {
-
-e.preventDefault();
-
-auth.sendPasswordResetEmail(
-
-document.getElementById("resetEmail").value
-
-).then(()=>alert("Email sent"));
-
-};
-
-});
-
-
-
-function syncUser(user){
-
-db.collection("users").doc(user.uid).set({
-
-name:user.displayName,
-
-email:user.email,
-
-photo:user.photoURL || ""
-
-},{merge:true});
-
-}
-
-
-
-auth.onAuthStateChanged(user=>{
-
-if(user){
-
-switchView("dashboard-view");
-
-document.getElementById("display-name-label").innerText=user.displayName;
-
-document.getElementById("user-email-display").innerText=user.email;
-
-loadProfilePhoto(user);
-
-}
-
-else{
-
-switchView("auth-view");
-
-}
-
-});
-
-
-
-function switchView(id){
-
-document.querySelectorAll(".view-section").forEach(v=>v.classList.remove("active"));
-
-document.getElementById(id).classList.add("active");
-
-}
-
-
-
-function toggleSettings(){
-
-document.getElementById("settings-panel").classList.toggle("active");
-
-}
-
-
-
-function updateName(){
-
-const name=document.getElementById("newNameInput").value;
-
-auth.currentUser.updateProfile({displayName:name}).then(()=>{
-
-syncUser(auth.currentUser);
-
-document.getElementById("display-name-label").innerText=name;
-
-});
-
-}
-
-
-
-function logout(){
-
-auth.signOut();
-
-}
-
-
-
-function loginWithGoogle(){
-
-const provider=new firebase.auth.GoogleAuthProvider();
-
-auth.signInWithPopup(provider)
-
-.then(res=>syncUser(res.user))
-
-.catch(e=>alert(e.message));
-
-}
-
-
-
-/*********************
-UPLOAD PHOTO
-*********************/
-function uploadPhoto(){
-
-const file=document.getElementById("photoInput").files[0];
-
-if(!file){
-
-alert("Select photo first");
-
-return;
-
-}
-
-const user=auth.currentUser;
-
-const ref=storage.ref("userPhotos/"+user.uid+"/"+file.name);
-
-ref.put(file)
-
-.then(()=>ref.getDownloadURL())
-
-.then(url=>{
-
-db.collection("users").doc(user.uid).update({
-
-photo:url
-
-});
-
-document.getElementById("profilePhoto").src=url;
-
-alert("Photo uploaded");
-
-});
-
-}
-
-
-
-/*********************
-LOAD PHOTO
-*********************/
-function loadProfilePhoto(user){
-
-db.collection("users").doc(user.uid).get()
-
-.then(doc=>{
-
-if(doc.exists){
-
-const data=doc.data();
-
-if(data.photo){
-
-document.getElementById("profilePhoto").src=data.photo;
-
-}
-
-}
-
-});
-
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechWorld | Secure Dashboard</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,800" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- AUTH VIEW -->
+<div id="auth-view" class="view-section active">
+    <div class="container" id="main-container">
+        <!-- SIGN UP -->
+        <div class="form-container sign-up-container">
+            <form id="signUpForm">
+                <h1>Create Account</h1>
+                <div class="social-container">
+                    <a href="#" onclick="loginWithGoogle()"><i class="fab fa-google"></i></a>
+                </div>
+                <span>or use your email for registration</span>
+                <input type="text" id="upName" placeholder="Name" required />
+                <input type="email" id="upEmail" placeholder="Email" required />
+                <input type="password" id="upPassword" placeholder="Password" required />
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+
+        <!-- SIGN IN -->
+        <div class="form-container sign-in-container">
+            <form id="signInForm">
+                <h1>Sign in</h1>
+                <div class="social-container">
+                    <a href="javascript:void(0)" onclick="loginWithGoogle()">
+                        <i class="fab fa-google"></i>
+                    </a>
+                </div>
+                <span>or use your account</span>
+                <input type="email" id="inEmail" placeholder="Email" required />
+                <input type="password" id="inPassword" placeholder="Password" required />
+                <a href="#" onclick="switchView('reset-view')">Forgot your password?</a>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
+
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h1>Welcome Back!</h1>
+                    <p>Keep connected with us by logging in</p>
+                    <button class="ghost" id="signInToggle">Sign In</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h1>Hello, Friend!</h1>
+                    <p>Enter your details and start your journey</p>
+                    <button class="ghost" id="signUpToggle">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RESET VIEW -->
+<div id="reset-view" class="view-section">
+    <div class="simple-card">
+        <h1>Reset Password</h1>
+        <form id="resetForm">
+            <input type="email" id="resetEmail" placeholder="Email Address" required />
+            <button type="submit">Send Reset Link</button>
+        </form>
+        <br>
+        <a href="#" onclick="switchView('auth-view')">← Back to Login</a>
+    </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="dashboard-view" class="view-section">
+    <nav class="navbar">
+        <div class="logo">TECHWORLD</div>
+        <div class="menu-icon" onclick="toggleSettings()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="dashboard-content">
+        <div class="welcome-box">
+            <h1>Dashboard</h1>
+            <p>Welcome, <span id="display-name-label">User</span>!</p>
+            <p id="user-email-display" style="color:#666;font-size:14px;"></p>
+        </div>
+
+    <!-- SETTINGS -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-header">
+            <h3>Account Settings</h3>
+            <i class="fas fa-times" onclick="toggleSettings()"></i>
+        </div>
+        <div class="settings-body">
+            <div class="setting-item">
+                <label>Update Name</label>
+                <input type="text" id="newNameInput" placeholder="New display name">
+                <button onclick="updateName()">Update</button>
+            </div>
+            <hr>
+            <div class="setting-item">
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

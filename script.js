@@ -8,11 +8,6 @@ const firebaseConfig = {
   storageBucket: "the-tech-world-e2b7c.firebasestorage.app",
   messagingSenderId: "435175920778",
   appId: "1:435175920778:web:09c9e899d71afce34c0973"
-
-
-
-
-
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -23,9 +18,6 @@ const db   = firebase.firestore();
 /************************************************
  * 2. WAIT FOR PAGE LOAD
  ************************************************/
-
-
-
 window.addEventListener("DOMContentLoaded", () => {
 
   // Animation toggles
@@ -109,28 +101,6 @@ function syncUserToFirestore(user) {
     lastLogin: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true })
   .catch(err => console.error("Firestore Error:", err));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 /************************************************
@@ -163,35 +133,11 @@ function switchView(viewId) {
 
   const view = document.getElementById(viewId);
   if (view) view.classList.add('active');
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 function toggleSettings() {
   const panel = document.getElementById('settings-panel');
   if (panel) panel.classList.toggle('active');
-
-
-
-
-
-
-
-
-
-
-
 }
 
 function updateName() {
@@ -212,14 +158,6 @@ function logout() {
   auth.signOut();
   const panel = document.getElementById('settings-panel');
   if (panel) panel.classList.remove('active');
-
-
-
-
-
-
-
-
 }
 
 /************************************************
@@ -232,65 +170,4 @@ function loginWithGoogle() {
   auth.signInWithPopup(provider)
     .then(result => syncUserToFirestore(result.user))
     .catch(err => alert(err.message));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}

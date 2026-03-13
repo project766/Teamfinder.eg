@@ -1,173 +1,251 @@
-   /************************************************
- * 1. INITIALIZE FIREBASE
- ************************************************/
 const firebaseConfig = {
-  apiKey: "AIzaSyD0efUT_IFoPQ3svHnu89j7kyWE6OYnWtE",
-  authDomain: "the-tech-world-e2b7c.firebaseapp.com",
-  projectId: "the-tech-world-e2b7c",
-  storageBucket: "the-tech-world-e2b7c.firebasestorage.app",
-  messagingSenderId: "435175920778",
-  appId: "1:435175920778:web:09c9e899d71afce34c0973"
+
+apiKey: "YOUR_API_KEY",
+
+authDomain: "YOUR_DOMAIN",
+
+projectId: "YOUR_PROJECT_ID",
+
+storageBucket: "YOUR_BUCKET",
+
+appId: "YOUR_APP_ID"
+
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-const db   = firebase.firestore();
 
-/************************************************
- * 2. WAIT FOR PAGE LOAD
- ************************************************/
+const db = firebase.firestore();
+
+const storage = firebase.storage();
+
+
+
 window.addEventListener("DOMContentLoaded", () => {
 
-  // Animation toggles
-  const mainContainer = document.getElementById('main-container');
-  const signUpToggle  = document.getElementById('signUpToggle');
-  const signInToggle  = document.getElementById('signInToggle');
+document.getElementById("signInForm").onsubmit = e => {
 
-  if (signUpToggle && signInToggle && mainContainer) {
-    signUpToggle.onclick = () =>
-      mainContainer.classList.add("right-panel-active");
+e.preventDefault();
 
-    signInToggle.onclick = () =>
-      mainContainer.classList.remove("right-panel-active");
-  }
+auth.signInWithEmailAndPassword(
 
-  /************************************************
-   * 6. FORM ACTIONS
-   ************************************************/
+document.getElementById("inEmail").value,
 
-  // Sign In
-  const signInForm = document.getElementById('signInForm');
-  if (signInForm) {
-    signInForm.onsubmit = (e) => {
-      e.preventDefault();
-      auth.signInWithEmailAndPassword(
-        document.getElementById('inEmail').value,
-        document.getElementById('inPassword').value
-      ).catch(err => alert(err.message));
-    };
-  }
+document.getElementById("inPassword").value
 
-  // Sign Up
-  const signUpForm = document.getElementById('signUpForm');
-  if (signUpForm) {
-    signUpForm.onsubmit = (e) => {
-      e.preventDefault();
+).catch(e => alert(e.message));
 
-      const name = document.getElementById('upName').value;
+};
 
-      auth.createUserWithEmailAndPassword(
-        document.getElementById('upEmail').value,
-        document.getElementById('upPassword').value
-      )
-      .then(res =>
-        res.user.updateProfile({ displayName: name })
-          .then(() => syncUserToFirestore(res.user))
-      )
-      .catch(err => alert(err.message));
-    };
-  }
 
-  // Reset Password
-  const resetForm = document.getElementById('resetForm');
-  if (resetForm) {
-    resetForm.onsubmit = (e) => {
-      e.preventDefault();
-      auth.sendPasswordResetEmail(
-        document.getElementById('resetEmail').value
-      )
-      .then(() => {
-        alert("Check your email 📧");
-        switchView('auth-view');
-      })
-      .catch(err => alert(err.message));
-    };
-  }
+
+document.getElementById("signUpForm").onsubmit = e => {
+
+e.preventDefault();
+
+const name = document.getElementById("upName").value;
+
+auth.createUserWithEmailAndPassword(
+
+document.getElementById("upEmail").value,
+
+document.getElementById("upPassword").value
+
+)
+
+.then(res => {
+
+return res.user.updateProfile({
+
+displayName: name
 
 });
 
-/************************************************
- * 3. DATABASE SYNC (ONE FUNCTION ONLY ✅)
- ************************************************/
-function syncUserToFirestore(user) {
-  if (!user) return;
+})
 
-  return db.collection("users").doc(user.uid).set({
-    name: user.displayName || "New User",
-    email: user.email,
-    phone: user.phoneNumber || "Not provided",
-    photo: user.photoURL || "",
-    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true })
-  .catch(err => console.error("Firestore Error:", err));
-}
+.then(() => syncUser(auth.currentUser))
 
-/************************************************
- * 4. AUTH STATE LISTENER
- ************************************************/
-auth.onAuthStateChanged(user => {
-  if (user) {
-    const nameLabel  = document.getElementById('display-name-label');
-    const emailLabel = document.getElementById('user-email-display');
+.catch(e => alert(e.message));
 
-    if (nameLabel)  nameLabel.innerText  = user.displayName || "User";
-    if (emailLabel) emailLabel.innerText = user.email;
+};
 
-    switchView('dashboard-view');
-    syncUserToFirestore(user);
-  } else {
-    const resetView = document.getElementById('reset-view');
-    if (!resetView || !resetView.classList.contains('active')) {
-      switchView('auth-view');
-    }
-  }
+
+
+document.getElementById("resetForm").onsubmit = e => {
+
+e.preventDefault();
+
+auth.sendPasswordResetEmail(
+
+document.getElementById("resetEmail").value
+
+).then(()=>alert("Email sent"));
+
+};
+
 });
 
-/************************************************
- * 5. HELPER FUNCTIONS
- ************************************************/
-function switchView(viewId) {
-  document.querySelectorAll('.view-section')
-    .forEach(v => v.classList.remove('active'));
 
-  const view = document.getElementById(viewId);
-  if (view) view.classList.add('active');
+
+function syncUser(user){
+
+db.collection("users").doc(user.uid).set({
+
+name:user.displayName,
+
+email:user.email,
+
+photo:user.photoURL || ""
+
+},{merge:true});
+
 }
 
-function toggleSettings() {
-  const panel = document.getElementById('settings-panel');
-  if (panel) panel.classList.toggle('active');
+
+
+auth.onAuthStateChanged(user=>{
+
+if(user){
+
+switchView("dashboard-view");
+
+document.getElementById("display-name-label").innerText=user.displayName;
+
+document.getElementById("user-email-display").innerText=user.email;
+
+loadProfilePhoto(user);
+
 }
 
-function updateName() {
-  const newName = document.getElementById('newNameInput').value;
+else{
 
-  if (newName && auth.currentUser) {
-    auth.currentUser.updateProfile({ displayName: newName })
-      .then(() => {
-        syncUserToFirestore(auth.currentUser);
-        document.getElementById('display-name-label').innerText = newName;
-        alert("Name Updated ✅");
-        toggleSettings();
-      });
-  }
+switchView("auth-view");
+
 }
 
-function logout() {
-  auth.signOut();
-  const panel = document.getElementById('settings-panel');
-  if (panel) panel.classList.remove('active');
+});
+
+
+
+function switchView(id){
+
+document.querySelectorAll(".view-section").forEach(v=>v.classList.remove("active"));
+
+document.getElementById(id).classList.add("active");
+
 }
 
-/************************************************
- * 7. GOOGLE LOGIN
- ************************************************/
-function loginWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
 
-  auth.signInWithPopup(provider)
-    .then(result => syncUserToFirestore(result.user))
-    .catch(err => alert(err.message));
+
+function toggleSettings(){
+
+document.getElementById("settings-panel").classList.toggle("active");
+
+}
+
+
+
+function updateName(){
+
+const name=document.getElementById("newNameInput").value;
+
+auth.currentUser.updateProfile({displayName:name}).then(()=>{
+
+syncUser(auth.currentUser);
+
+document.getElementById("display-name-label").innerText=name;
+
+});
+
+}
+
+
+
+function logout(){
+
+auth.signOut();
+
+}
+
+
+
+function loginWithGoogle(){
+
+const provider=new firebase.auth.GoogleAuthProvider();
+
+auth.signInWithPopup(provider)
+
+.then(res=>syncUser(res.user))
+
+.catch(e=>alert(e.message));
+
+}
+
+
+
+/*********************
+UPLOAD PHOTO
+*********************/
+function uploadPhoto(){
+
+const file=document.getElementById("photoInput").files[0];
+
+if(!file){
+
+alert("Select photo first");
+
+return;
+
+}
+
+const user=auth.currentUser;
+
+const ref=storage.ref("userPhotos/"+user.uid+"/"+file.name);
+
+ref.put(file)
+
+.then(()=>ref.getDownloadURL())
+
+.then(url=>{
+
+db.collection("users").doc(user.uid).update({
+
+photo:url
+
+});
+
+document.getElementById("profilePhoto").src=url;
+
+alert("Photo uploaded");
+
+});
+
+}
+
+
+
+/*********************
+LOAD PHOTO
+*********************/
+function loadProfilePhoto(user){
+
+db.collection("users").doc(user.uid).get()
+
+.then(doc=>{
+
+if(doc.exists){
+
+const data=doc.data();
+
+if(data.photo){
+
+document.getElementById("profilePhoto").src=data.photo;
+
+}
+
+}
+
+});
+
 }

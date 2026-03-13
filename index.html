@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="icon" href="logo.png" type="image/png">
@@ -87,26 +87,43 @@
 
     <div class="dashboard-content">
         <div class="welcome-box">
+            <div id="profilePhotoContainer" class="profile-photo-container"></div>
             <h1>Dashboard</h1>
             <p>Welcome, <span id="display-name-label">User</span>!</p>
             <p id="user-email-display" style="color:#666;font-size:14px;"></p>
         </div>
 
-    <!-- SETTINGS -->
-    <div id="settings-panel" class="settings-panel">
-        <div class="settings-header">
-            <h3>Account Settings</h3>
-            <i class="fas fa-times" onclick="toggleSettings()"></i>
-        </div>
-        <div class="settings-body">
-            <div class="setting-item">
-                <label>Update Name</label>
-                <input type="text" id="newNameInput" placeholder="New display name">
-                <button onclick="updateName()">Update</button>
+        <!-- SETTINGS PANEL -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-header">
+                <h3>Account Settings</h3>
+                <i class="fas fa-times" onclick="toggleSettings()"></i>
             </div>
-            <hr>
-            <div class="setting-item">
-                <button class="logout-btn" onclick="logout()">Logout</button>
+            <div class="settings-body">
+                <div class="setting-item">
+                    <label>Update Name</label>
+                    <input type="text" id="newNameInput" placeholder="New display name">
+                    <button onclick="updateName()">Update</button>
+                </div>
+                
+                <div class="setting-item">
+                    <label>Profile Photo</label>
+                    <div class="photo-upload-container">
+                        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                        <button type="button" id="photoSelectBtn" class="photo-btn">
+                            <i class="fas fa-camera"></i> Select Photo
+                        </button>
+                        <div id="photoPreview" class="photo-preview"></div>
+                        <button id="uploadPhotoBtn" class="upload-btn" style="display:none;">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                    </div>
+                </div>
+                
+                <hr>
+                <div class="setting-item">
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
             </div>
         </div>
     </div>
@@ -116,9 +133,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
-
-
-
